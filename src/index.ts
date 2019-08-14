@@ -1,41 +1,30 @@
 import cfg = require('./config')
 import log = require('./log')
-import mqtt = require('mqtt')
-import axios = require('axios')
+import mqtt = require('./channel/mqtt')
+import aws = require('./recognizer/aws');
+import azure = require('./recognizer/azure');
 
-let client  = mqtt.connect(`mqtt://${cfg.mqtt.broker}`)
+let recognizer
+if(cfg.azure.subscription) {
+  log.info('Configure azure recognizer')
+  recognizer = azure.newAzureRecognizer(cfg.azure.subscription.key, cfg.azure.region)
+} else if (cfg.aws.access.key) {
+  log.info('Configure aws recognizer')
+  recognizer = aws.newAWSRecognizer(cfg.aws.access.key, cfg.aws.secret.access.key, cfg.aws.region, cfg.aws.confidence.min)
+} else{
+  log.error('No image recognizer was configured!')
+  process.exit(1)
+}
 
-client.on('connect', () => {
-  log.info('Connection to mqtt broker established.')
-
-  client.subscribe(cfg.mqtt.topic, {qos: 1}, (err) => {
-    if(err) {
-      log.error('Failed to connect to mqtt broker!', {error: err})
-      process.exit(1)
-    }
-  })
-})
-
-client.on('message', (topic, message) => {
-  const correlationId = message.toString('ascii', 0, 36)
-  if(correlationId.length !== 36) {
-    log.warn('Received a invalid message - message to short')
-    return
-  }
-
-  const image = message.slice(36)
-  axios.default.post(
-      `https://${cfg.azure.region}.api.cognitive.microsoft.com/vision/v2.0/ocr?language=de`,
-      image,
-      {
-        headers: {
-          "Ocp-Apim-Subscription-Key": cfg.azure.subscription.key,
-          "Content-Type": "application/octet-stream"
-        }
-      })
-    .then(resp => {
-      console.log(resp.data)
-    }).catch(err => {
-      log.error('Failed to call azure ocr', {error: err, correlationId})
+let mqttClient = mqtt.newMQTTClient(cfg.mqtt.broker, cfg.mqtt.topic)
+mqttClient.Start({
+  HandleImage: (correlationId, image) => {
+    recognizer.Recognize(correlationId, image)
+      .then(lines => {
+        log.info("Image was recognized.", {correlationId, lines})
+      }).catch(err => {
+        log.error("Error while recognizing image.", {error: err, correlationId})
     })
+  },
+  HandleError: () => process.exit(2)
 })

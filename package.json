@@ -7,9 +7,26 @@
   "license": "MIT",
   "scripts": {
     "start": "npm run build:live",
-    "test": "mocha -r ts-node/register test/**/*.ts",
+    "test": "CFG_LOG_LEVEL=quiet nyc --reporter=text-summary mocha -r ts-node/register test/**/*.ts",
     "build": "tsc -p . && webpack --target node --mode development ./out_js/index.js",
     "build:live": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
   },
   "devDependencies": {
     "@types/mocha": "^5.2.7",
@@ -17,6 +34,7 @@
     "assert": "^2.0.0",
     "mocha": "^6.2.0",
     "nodemon": "^1.19.1",
+    "nyc": "^14.1.1",
     "shebang-loader": "0.0.1",
     "ts-node": "^8.3.0",
     "typescript": "^3.5.3",
@@ -24,6 +42,7 @@
     "webpack-cli": "^3.3.6"
   },
   "dependencies": {
+    "aws-sdk": "^2.509.0",
     "axios": "^0.19.0",
     "mqtt": "^3.0.0",
     "rainu-env-parser": "^1.1.2",

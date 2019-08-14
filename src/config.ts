@@ -16,7 +16,21 @@ const defaults = {
     subscription: {
       key: ''
     },
-    region: ''
+    region: '',
+  },
+  aws: {
+    region: '',
+    access: {
+      key: ''
+    },
+    secret: {
+      access: {
+        key: ''
+      }
+    },
+    confidence: {
+      min: 90
+    }
   }
 }
 
