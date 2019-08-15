@@ -5,7 +5,7 @@ import log = require('../log')
 export let $mqttConnect = mqtt.connect
 
 export interface Callback {
-  HandleImage(correlationId: string, image: Buffer)
+  HandleImage(correlationId: string, clientId : string, image: Buffer)
   HandleError(error : any)
 }
 
@@ -26,15 +26,24 @@ export const newMQTTClient = (broker : string, topic : string) => {
       })
 
       this.$client.on('message', (topic, message) => {
+        const topicParts = topic.split('/')
+        const clientId = topicParts[topicParts.length - 1]
         const correlationId = message.toString('ascii', 0, 36)
         if(correlationId.length !== 36) {
-          log.warn('Received a invalid message - message to short')
+          log.warn('Received a invalid message - message to short', {clientId})
           return
         }
 
         const image = message.slice(36)
-        callback.HandleImage(correlationId, image)
+        callback.HandleImage(correlationId, clientId, image)
       })
+    },
+
+    SendRecognition(textLines : Array<string>, topic : string, correlationId : string) {
+      this.$client.publish(topic, JSON.stringify({
+        correlationId: correlationId,
+        lookup: textLines,
+      }), {qos: 1})
     }
   }
 }

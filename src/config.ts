@@ -10,7 +10,10 @@ const defaults = {
     client: {
       id: "image-recognizer"
     },
-    topic: "recognize/+"
+    topic: {
+      in: "recognize/+",
+      out: "lookup/__CLIENT_ID__"
+    }
   },
   azure: {
     subscription: {

@@ -3,6 +3,11 @@ import mqtt = require('../../src/channel/mqtt')
 
 describe('MQTT channel', () => {
 
+  beforeEach(() => {
+    // @ts-ignore
+    mqtt.$mqttConnect = () => '<mqttClient>'
+  });
+
   it('configure mqtt correctly', () => {
     //given
     const broker = '<broker>'
@@ -19,9 +24,6 @@ describe('MQTT channel', () => {
 
     //then
     assert.strictEqual('<mqttClient>', toTest.$client)
-
-    // @ts-ignore
-    mqtt.$mqttConnect = () => '<mqttClient>'
   })
 
   describe('Start', () => {
@@ -48,7 +50,7 @@ describe('MQTT channel', () => {
       }
       //when
       toTest.Start({
-        HandleImage(correlationId: string, image: Buffer) {},
+        HandleImage(correlationId: string, clientId: string, image: Buffer) {},
         HandleError(error: any) {}
       })
 
@@ -76,7 +78,7 @@ describe('MQTT channel', () => {
       }
       //when
       toTest.Start({
-        HandleImage(correlationId: string, image: Buffer) {},
+        HandleImage(correlationId: string, clientId: string, image: Buffer) {},
         HandleError(error: any) {}
       })
 
@@ -106,7 +108,7 @@ describe('MQTT channel', () => {
           cbCalled = true
           assert.strictEqual(error, 'someError')
         },
-        HandleImage(correlationId: string, image: Buffer) {}
+        HandleImage(correlationId: string, clientId: string, image: Buffer) {}
       })
 
       //then
@@ -134,7 +136,7 @@ describe('MQTT channel', () => {
         HandleError(error: any) {
           cbCalled = true
         },
-        HandleImage(correlationId: string, image: Buffer) {}
+        HandleImage(correlationId: string, clientId: string, image: Buffer) {}
       })
 
       //then
@@ -173,22 +175,24 @@ describe('MQTT channel', () => {
       //given
       const testCorrelationId = "eafbd535-01df-403c-909e-aabec87c3c28"
       const testImage = "<image>"
+      const testClientId = '<clientId>'
       const toTest = mqtt.newMQTTClient("", "")
       toTest.$client = {
         // @ts-ignore
         on(event, cb) {
           if(event === 'message'){
             //call the callback
-            cb("", Buffer.from(`${testCorrelationId}${testImage}`))
+            cb(`root/${testClientId}`, Buffer.from(`${testCorrelationId}${testImage}`))
           }
         }
       }
       //when
       let cbCalled = false
       toTest.Start({
-        HandleImage(correlationId, image) {
+        HandleImage(correlationId, clientId, image) {
           cbCalled = true
           assert.strictEqual(correlationId, testCorrelationId)
+          assert.strictEqual(clientId, testClientId)
           assert.strictEqual(testImage, image.toString())
         },
         HandleError(error: any) {}
@@ -202,4 +206,31 @@ describe('MQTT channel', () => {
 
   })
 
+  describe('SendRecognition', () => {
+
+    it('should publish the right message to the topic', (done) => {
+      //given
+      const testTopic = '<topic>'
+      const testLines = ['Line#1', 'Line#2']
+      const testCorrelationId = '<correlationId>'
+      const toTest = mqtt.newMQTTClient("", "")
+      toTest.$client = {
+        // @ts-ignore
+        publish(topic, message, options) {
+          assert.strictEqual(topic, testTopic)
+          assert.deepStrictEqual(JSON.parse(message), {
+            correlationId:testCorrelationId,
+            lookup: testLines
+          })
+          assert.deepStrictEqual(options, { qos: 1 })
+        }
+      }
+
+      //when
+      toTest.SendRecognition(testLines, testTopic, testCorrelationId)
+
+      done()
+    })
+
+  })
 })

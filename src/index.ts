@@ -16,14 +16,15 @@ if(cfg.azure.subscription) {
   process.exit(1)
 }
 
-let mqttClient = mqtt.newMQTTClient(cfg.mqtt.broker, cfg.mqtt.topic)
+let mqttClient = mqtt.newMQTTClient(cfg.mqtt.broker, cfg.mqtt.topic.in)
 mqttClient.Start({
-  HandleImage: (correlationId, image) => {
+  HandleImage: (correlationId, clientId, image) => {
     recognizer.Recognize(correlationId, image)
       .then(lines => {
-        log.info("Image was recognized.", {correlationId, lines})
+        log.info("Image was recognized.", {correlationId, lines, clientId})
+        mqttClient.SendRecognition(lines, cfg.mqtt.topic.out.replace("__CLIENT_ID__", clientId), correlationId)
       }).catch(err => {
-        log.error("Error while recognizing image.", {error: err, correlationId})
+        log.error("Error while recognizing image.", {error: err, correlationId, clientId})
     })
   },
   HandleError: () => process.exit(2)
