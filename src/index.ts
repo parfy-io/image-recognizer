@@ -5,7 +5,7 @@ import aws = require('./recognizer/aws');
 import azure = require('./recognizer/azure');
 
 let recognizer
-if(cfg.azure.subscription) {
+if(cfg.azure.subscription.key) {
   log.info('Configure azure recognizer')
   recognizer = azure.newAzureRecognizer(cfg.azure.subscription.key, cfg.azure.region)
 } else if (cfg.aws.access.key) {
