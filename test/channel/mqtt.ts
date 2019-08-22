@@ -219,7 +219,7 @@ describe('MQTT channel', () => {
         publish(topic, message, options) {
           assert.strictEqual(topic, testTopic)
           assert.deepStrictEqual(JSON.parse(message), {
-            correlationId:testCorrelationId,
+            correlationID:testCorrelationId,
             lookup: testLines
           })
           assert.deepStrictEqual(options, { qos: 1 })

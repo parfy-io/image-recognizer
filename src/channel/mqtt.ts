@@ -41,7 +41,7 @@ export const newMQTTClient = (broker : string, topic : string) => {
 
     SendRecognition(textLines : Array<string>, topic : string, correlationId : string) {
       this.$client.publish(topic, JSON.stringify({
-        correlationId: correlationId,
+        correlationID: correlationId,
         lookup: textLines,
       }), {qos: 1})
     }
