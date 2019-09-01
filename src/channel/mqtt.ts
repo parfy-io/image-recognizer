@@ -27,22 +27,37 @@ export const newMQTTClient = (broker : string, topic : string) => {
 
       this.$client.on('message', (topic, message) => {
         const topicParts = topic.split('/')
-        const clientId = topicParts[topicParts.length - 1]
-        const correlationId = message.toString('ascii', 0, 36)
-        if(correlationId.length !== 36) {
-          log.warn('Received a invalid message - message to short', {clientId})
+        if(topicParts.length < 3) {
+          log.warn('Received a invalid message - invalid topic structure')
           return
         }
+        const correlationId = topicParts[topicParts.length - 1]
+        const clientId = topicParts[topicParts.length - 2]
 
-        const image = message.slice(36)
-        callback.HandleImage(correlationId, clientId, image)
+        callback.HandleImage(correlationId, clientId, message)
       })
     },
 
-    SendRecognition(textLines : Array<string>, topic : string, correlationId : string) {
+    SendRecognition(textLines : Array<string>, topic : string) {
       this.$client.publish(topic, JSON.stringify({
-        correlationID: correlationId,
         lookup: textLines,
+      }), {qos: 1})
+    },
+
+    SendInfoStatus(code : number, message : string, topic : string) {
+      this.sendStatus('info', code, message, topic)
+    },
+    SendErrorStatus(code : number, message : string , topic : string) {
+      this.sendStatus('error', code, message, topic)
+    },
+
+    sendStatus(level : string, code : number, message : string, topic : string) {
+      this.$client.publish(topic, JSON.stringify({
+        level: level,
+        source: 'image-recognizer',
+        code: code,
+        message: message,
+        timestamp: new Date().toISOString()
       }), {qos: 1})
     }
   }

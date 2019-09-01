@@ -19,12 +19,16 @@ if(cfg.azure.subscription.key) {
 let mqttClient = mqtt.newMQTTClient(cfg.mqtt.broker, cfg.mqtt.topic.in)
 mqttClient.Start({
   HandleImage: (correlationId, clientId, image) => {
+    mqttClient.SendInfoStatus(202, 'Start recognition.', cfg.buildTopic(cfg.mqtt.topic.status, clientId, correlationId))
+    
     recognizer.Recognize(correlationId, image)
       .then(lines => {
         log.info("Image was recognized.", {correlationId, lines, clientId})
-        mqttClient.SendRecognition(lines, cfg.mqtt.topic.out.replace("__CLIENT_ID__", clientId), correlationId)
+        mqttClient.SendRecognition(lines, cfg.buildTopic(cfg.mqtt.topic.out, clientId, correlationId))
+        mqttClient.SendInfoStatus(200, 'Recognition is done.', cfg.buildTopic(cfg.mqtt.topic.status, clientId, correlationId))
       }).catch(err => {
         log.error("Error while recognizing image.", {error: err, correlationId, clientId})
+        mqttClient.SendErrorStatus(500, 'Error while recognizing image.', cfg.buildTopic(cfg.mqtt.topic.status, clientId, correlationId))
     })
   },
   HandleError: () => process.exit(2)

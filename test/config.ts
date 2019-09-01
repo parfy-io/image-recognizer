@@ -7,9 +7,11 @@ describe('Configuration mechanism', () => {
 
     let configs = [
       {l: "log level", k: (c) => c.log.level, v: "info"},
-      {l: "mqtt broker", k: (c) => c.mqtt.broker, v: ""},
+      {l: "mqtt broker", k: (c) => c.mqtt.broker, v: "localhost:1883"},
       {l: "mqtt clientId", k: (c) => c.mqtt.client.id, v: "image-recognizer"},
-      {l: "mqtt topic", k: (c) => c.mqtt.topic, v: "recognize/+"}
+      {l: "mqtt topic", k: (c) => c.mqtt.topic.in, v: "recognize/+/+"},
+      {l: "mqtt topic", k: (c) => c.mqtt.topic.out, v: "lookup/__CLIENT_ID__/__CORRELATION_ID__"},
+      {l: "mqtt topic", k: (c) => c.mqtt.topic.status, v: "status/__CLIENT_ID__/__CORRELATION_ID__"},
     ]
 
     for(let i in configs) {
@@ -26,7 +28,9 @@ describe('Configuration mechanism', () => {
       {e: "CFG_LOG_LEVEL", v: 'error', k: (c) => c.log.level},
       {e: "CFG_MQTT_BROKER", v: '<mqtt-broker>', k: (c) => c.mqtt.broker},
       {e: "CFG_MQTT_CLIENT_ID", v: '<mqtt-clientId>', k: (c) => c.mqtt.client.id},
-      {e: "CFG_MQTT_TOPIC", v: '<mqtt-topic>', k: (c) => c.mqtt.topic},
+      {e: "CFG_MQTT_TOPIC_IN", v: '<mqtt-topic>', k: (c) => c.mqtt.topic.in},
+      {e: "CFG_MQTT_TOPIC_OUT", v: '<mqtt-topic>', k: (c) => c.mqtt.topic.out},
+      {e: "CFG_MQTT_TOPIC_STATUS", v: '<mqtt-topic>', k: (c) => c.mqtt.topic.status},
       {e: "CFG_OTHERVALUE", v: 'someOtherValue', k: (c) => c.othervalue},
     ]
 

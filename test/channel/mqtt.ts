@@ -145,7 +145,7 @@ describe('MQTT channel', () => {
       done()
     })
 
-    it('will not call the callback on invalid messages', (done) => {
+    it('will not call the callback on invalid topic-structure', (done) => {
       //given
       const toTest = mqtt.newMQTTClient("", "")
       toTest.$client = {
@@ -182,7 +182,7 @@ describe('MQTT channel', () => {
         on(event, cb) {
           if(event === 'message'){
             //call the callback
-            cb(`root/${testClientId}`, Buffer.from(`${testCorrelationId}${testImage}`))
+            cb(`root/${testClientId}/${testCorrelationId}`, Buffer.from(`${testImage}`))
           }
         }
       }
@@ -212,14 +212,12 @@ describe('MQTT channel', () => {
       //given
       const testTopic = '<topic>'
       const testLines = ['Line#1', 'Line#2']
-      const testCorrelationId = '<correlationId>'
       const toTest = mqtt.newMQTTClient("", "")
       toTest.$client = {
         // @ts-ignore
         publish(topic, message, options) {
           assert.strictEqual(topic, testTopic)
           assert.deepStrictEqual(JSON.parse(message), {
-            correlationID:testCorrelationId,
             lookup: testLines
           })
           assert.deepStrictEqual(options, { qos: 1 })
@@ -227,7 +225,69 @@ describe('MQTT channel', () => {
       }
 
       //when
-      toTest.SendRecognition(testLines, testTopic, testCorrelationId)
+      toTest.SendRecognition(testLines, testTopic)
+
+      done()
+    })
+
+  })
+
+  describe('SendInfoStatus', () => {
+
+    it('should publish the right message to the topic', (done) => {
+      //given
+      const testTopic = '<topic>'
+      const testMessage = '<message>'
+      const testCode = 1312
+      const toTest = mqtt.newMQTTClient("", "")
+      toTest.$client = {
+        // @ts-ignore
+        publish(topic, message, options) {
+          const parsed = JSON.parse(message)
+
+          assert.strictEqual(topic, testTopic)
+          assert.strictEqual(parsed.level, 'info')
+          assert.strictEqual(parsed.source, 'image-recognizer')
+          assert.strictEqual(parsed.code, testCode)
+          assert.strictEqual(parsed.message, testMessage)
+          assert(parsed.timestamp)
+          assert.deepStrictEqual(options, { qos: 1 })
+        }
+      }
+
+      //when
+      toTest.SendInfoStatus(testCode, testMessage, testTopic)
+
+      done()
+    })
+
+  })
+
+  describe('SendErrorStatus', () => {
+
+    it('should publish the right message to the topic', (done) => {
+      //given
+      const testTopic = '<topic>'
+      const testMessage = '<message>'
+      const testCode = 1312
+      const toTest = mqtt.newMQTTClient("", "")
+      toTest.$client = {
+        // @ts-ignore
+        publish(topic, message, options) {
+          const parsed = JSON.parse(message)
+
+          assert.strictEqual(topic, testTopic)
+          assert.strictEqual(parsed.level, 'error')
+          assert.strictEqual(parsed.source, 'image-recognizer')
+          assert.strictEqual(parsed.code, testCode)
+          assert.strictEqual(parsed.message, testMessage)
+          assert(parsed.timestamp)
+          assert.deepStrictEqual(options, { qos: 1 })
+        }
+      }
+
+      //when
+      toTest.SendErrorStatus(testCode, testMessage, testTopic)
 
       done()
     })

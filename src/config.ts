@@ -11,8 +11,9 @@ const defaults = {
       id: "image-recognizer"
     },
     topic: {
-      in: "recognize/+",
-      out: "lookup/__CLIENT_ID__"
+      in: "recognize/+/+",
+      out: "lookup/__CLIENT_ID__/__CORRELATION_ID__",
+      status: "status/__CLIENT_ID__/__CORRELATION_ID__"
     }
   },
   azure: {
@@ -37,13 +38,20 @@ const defaults = {
   }
 }
 
-const parseEnv = function() {
+const parseEnv = () => {
   let config =  envParser.parse("CFG_", defaults)
 
   return config
 }
 
+const buildTopic = (topicPattern, clientId, correlationId) => {
+  return topicPattern
+    .replace("__CLIENT_ID__", clientId)
+    .replace("__CORRELATION_ID__", correlationId)
+}
+
 export = {
   ...parseEnv(),
   parseEnv,
+  buildTopic
 }
