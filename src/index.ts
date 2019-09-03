@@ -16,7 +16,7 @@ if(cfg.azure.subscription.key) {
   process.exit(1)
 }
 
-let mqttClient = mqtt.newMQTTClient(cfg.mqtt.broker, cfg.mqtt.topic.in)
+let mqttClient = mqtt.newMQTTClient(cfg.mqtt.broker, cfg.mqtt.topic.in, cfg.mqtt.username, cfg.mqtt.password)
 mqttClient.Start({
   HandleImage: (correlationId, clientId, image) => {
     mqttClient.SendInfoStatus(202, 'Start recognition.', cfg.buildTopic(cfg.mqtt.topic.status, clientId, correlationId))
